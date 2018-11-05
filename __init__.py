@@ -54,7 +54,10 @@ def receive_regulation():
     print("sleep ended")
     # sanity check of the demanded status
     if (regulation != "auto" and regulation != "manual"):
-        return "unauthorized regulation mode", 400
+        return jsonify({
+            'error': 'unauthorized regulation mode: '
+            + '\'' + regulation + '\''
+            }), 400
     else:
         status["regulation"] = regulation
         return jsonify({'realized': regulation})
