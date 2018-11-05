@@ -2,26 +2,28 @@
 <template>
 
   <div class="block">
-    <div class="block has-text-centered">
-      <div class="container">
-        <div class="notification has-text-weight-bold is-size-4"
+      <div class="column is-fullwidth has-text-centered">
+        <div class="button has-text-weight-bold is-large is-fullwidth"
         v-bind:class="{
           'is-info': (temperature <= 18),
           'is-primary': (18 < temperature && temperature <= 21),
           'is-warning': (21 < temperature && temperature <= 23),
-          'is-danger': (temperature > 23)
+          'is-danger': (temperature > 23),
+          'is-loading': (temperature === '??')
         }"
-        @click="getTemperature"
-        style="margin-left: 20px; margin-right: 20px">
-          <font-awesome-icon v-if="(temperature > 21)" icon="chevron-circle-up" />
+        @click="getTemperature">
+          {{ temperature }} °C
+          
+          <span v-if="(temperature > 21)">&nbsp;</span>
+          <font-awesome-icon v-if="(temperature > 21)" icon="chevron-circle-up"/>
+
+          <span v-if="(temperature < 20)">&nbsp;</span>
           <font-awesome-icon v-if="(temperature < 20)" icon="chevron-circle-down" />
-          {{ temperature }} °C 
         </div>
       </div>
-      </div>
 
-    <div class="block" style="margin-left: 20px; margin-right: 20px">
-          <div class="block has-text-centered">
+    <div class="block">
+          <div class="column is-fullwidth has-text-centered">
             <button class="button is-primary is-large"
             v-bind:class="{
               'is-outlined': (regulation === 'manual'),
@@ -43,13 +45,13 @@
           </div>
 
           <div class="block">
-            <div class="notification">Regulation = {{ regulation }}</div>
+            <div class="notification"
+           style="margin-left: 12px; margin-right: 12px">Regulation = {{ regulation }}</div>
           </div>
     </div>
     
     <div class="block"
-    v-if="(regulation === 'manual' || regulation === 'wait')"
-    style="margin-left: 20px; margin-right: 20px"> 
+    style="margin-left: 12px; margin-right: 12px"> 
       <span> Manual regulation value </span>
       <div class="notification"
       v-bind:class="{
@@ -63,6 +65,7 @@
           v-model="sliderValue"
           @drag-end="sliderDragEnd"
           style="margin-left: 20px; margin-right: 20px;"
+          :disabled="(regulation !== 'manual')"
         ></vue-slider>
       </div>
     </div>
@@ -127,7 +130,7 @@ export default {
         this.regulation = response.data.realized
       })
       .catch(error => {
-        console.log(error)
+        console.log(error.response.data.error)
         this.regulation = 'auto'
       })
     },
