@@ -1,9 +1,12 @@
 from flask import Flask, request, render_template, jsonify
-import random as rdm
+
 from flask_cors import CORS
-import requests
-import time
-import math
+
+import sys, time, math, requests
+import random as rdm
+
+sys.path.append('backend')
+import motor as motor
 
 # status = {
 #     'temperature': -1,
@@ -28,6 +31,20 @@ def random_number():
     return jsonify(response)
 
 
+@app.route('/api/initmotor')
+def init_motor_request():
+    global status
+
+    print("Motor asked for init... ")
+    isOK = motor.initPosition()
+    status["motorStatus"] = isOK
+
+    if isOK == "OK":
+        return jsonify({'motorStatus': isOK})
+    else:
+        return jsonify({'motorStatus': isOK}), 500
+
+
 @app.route('/api/gettemperature', methods=['GET'])
 def send_temperature():
     # demand = float(request.get_data('demanded'))
@@ -40,18 +57,23 @@ def receive_manual_demand():
     demanded = request.get_json()["demanded"]
 
     print("I received manual demand = " + str(demanded) + " %")
-    time.sleep(0.5)
-    return jsonify({'realized': math.floor(demanded)})
+    print("Executing...")
+
+    newPercentage = demand_motor(demanded)
+    print("Executed = " + str(math.floor(newPercentage)))
+    return jsonify({'realized': math.floor(newPercentage)})
 
 
 @app.route('/api/setregulation', methods=['POST'])
 def receive_regulation():
     global status
+
     # retrieving regulation status from client
     regulation = request.get_json()["regulation"]
     print("I received the regulation type = " + regulation)
     time.sleep(0.5)
     print("sleep ended")
+
     # sanity check of the demanded status
     if (regulation != "auto" and regulation != "manual"):
         return jsonify({
@@ -82,7 +104,13 @@ def measure_temperature():
 # ## --        COMMAND      -- ## #
 # ## ------------------------- ## #
 def demand_motor(percentage):
-    return True
+    global status
+
+    oldPercentage = status["percentageMotor"]
+    newPercentage = motor.setPercentage(oldPercentage, percentage)
+    status["percentageMotor"] = newPercentage
+
+    return newPercentage
 
 
 # ## ------------------------- ## #
@@ -97,10 +125,19 @@ def regulation(temperature, demand):
 # ## ------------------------- ## #
 if __name__ == '__main__':
     global status
+
+    temperature = measure_temperature()
+
+    print("Starting... // temperature = " + str(temperature))
+    # Motor checking for initPosition
+    print("Motor intialization...")
+    isOK = motor.initPosition()
+
     status = {
-        'temperature': -1,
-        'regulation': 'auto'
+        'temperature': temperature,
+        'regulation': 'auto',
+        'percentageMotor': 0,
+        'motorStatus': isOK
     }
-    print("je demarre // temperature = " + str(status["temperature"]))
 
     app.run()
