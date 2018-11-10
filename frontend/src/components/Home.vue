@@ -100,7 +100,7 @@ export default {
       this.randomNumber = this.getRandomFromBackend()
     },
     getRandomFromBackend () {
-      const path = `http://127.0.0.1:5000/api/random`
+      const path = `http://192.168.1.67/api/random`
       axios.get(path)
       .then(response => {
         this.randomNumber = response.data.randomNumber
@@ -112,7 +112,7 @@ export default {
     getTemperature () {
       this.temperature = '??'
       console.log('waiting for temperature...')
-      const path = `http://127.0.0.1:5000/api/gettemperature`
+      const path = `http://192.168.1.67/api/gettemperature`
       axios.get(path)
       .then(response => {
         this.temperature = response.data.temperature.toFixed(1)
@@ -123,7 +123,7 @@ export default {
     },
     toggleRegulation (regul) {
       this.regulation = 'wait'
-      const path = `http://127.0.0.1:5000/api/setregulation`
+      const path = `http://192.168.1.67/api/setregulation`
       axios.post(path, {regulation: regul})
       .then(response => {
         console.log('Server regulation status = ' + response.data.realized)
@@ -139,7 +139,7 @@ export default {
     sliderDragEnd (obj) {
       console.log('Client Demanded Value = ' + obj.getValue() + ' %')
       this.waitingForValue = 'wait'
-      const path = `http://127.0.0.1:5000/api/manualdemand`
+      const path = `http://192.168.1.67/api/manualdemand`
       axios.post(path, {demanded: obj.getValue()})
       .then(response => {
         console.log('Server Realized Value = ' + response.data.realized + ' %')
