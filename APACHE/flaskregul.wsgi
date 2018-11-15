@@ -1,8 +1,14 @@
-#!/usr/bin/python
 import sys
-print("before insert to path")
+
 sys.path.insert(0,"/var/www/flaskregul")
-print("after insert to path")
-print("before import app")
+sys.path.insert(0,"/var/www/flaskregul/backend")
+sys.path.insert(0,"/home/pi/.local/lib/python3.5/site-packages")
+
 from __init__ import app as application
-print("after import app")
+from __init__ import *
+
+print("Starting... // temperature = " + str(status["temperature"]))
+# Motor checking for initPosition
+print("Motor intialization...")
+motor.initPosition()
+

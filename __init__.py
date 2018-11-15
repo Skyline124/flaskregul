@@ -1,17 +1,26 @@
 from flask import Flask, request, render_template, jsonify
-
 from flask_cors import CORS
 
-import sys, time, math, requests
+import time
+import math
+import requests
 import random as rdm
+from backend import motor as motor
+import board
+import busio
+import adafruit_sht31d
 
-sys.path.append('backend')
-import motor as motor
+i2c = busio.I2C(board.SCL, board.SDA)
+sensor = adafruit_sht31d.SHT31D(i2c)
 
-# status = {
-#     'temperature': -1,
-#     'regulation': 'auto'
-# }
+
+status = {
+    'temperature': sensor.temperature,
+    'humidity': sensor.relative_humidity,
+    'regulation': 'manual',
+    'percentageMotor': 0,
+    'motorStatus': "OK"
+}
 
 # ## ------------------------ ## #
 # ## --       SERVER       -- ## #
@@ -48,8 +57,15 @@ def init_motor_request():
 @app.route('/api/gettemperature', methods=['GET'])
 def send_temperature():
     # demand = float(request.get_data('demanded'))
-    time.sleep(0.5)
+
     return jsonify({'temperature': measure_temperature()})
+
+
+@app.route('/api/gethumidity', methods=['GET'])
+def send_humidity():
+    # demand = float(request.get_data('demanded'))
+
+    return jsonify({'humidity': measure_humidity()})
 
 
 @app.route('/api/manualdemand', methods=['POST'])
@@ -64,6 +80,16 @@ def receive_manual_demand():
     return jsonify({'realized': math.floor(newPercentage)})
 
 
+@app.route('/api/getregulation', methods=['GET'])
+def send_regulation():
+    global status
+
+    # retrieving regulation status from client
+    regulation = status["regulation"]
+    print("sending info on regulation type = " + regulation)
+    return jsonify({'regulation': regulation})
+
+
 @app.route('/api/setregulation', methods=['POST'])
 def receive_regulation():
     global status
@@ -71,15 +97,12 @@ def receive_regulation():
     # retrieving regulation status from client
     regulation = request.get_json()["regulation"]
     print("I received the regulation type = " + regulation)
-    time.sleep(0.5)
-    print("sleep ended")
 
     # sanity check of the demanded status
     if (regulation != "auto" and regulation != "manual"):
-        return jsonify({
-            'error': 'unauthorized regulation mode: '
-            + '\'' + regulation + '\''
-            }), 400
+        return jsonify({'error': 'unauthorized regulation mode: '
+                        + '\'' + regulation + '\''
+                        }), 400
     else:
         status["regulation"] = regulation
         return jsonify({'realized': regulation})
@@ -89,7 +112,7 @@ def receive_regulation():
 @app.route('/<path:path>')
 def catch_all(path):
     if app.debug:
-        return requests.get('http://127.0.0.1:5000/{}'.format(path)).text
+        return requests.get('http://192.168.1.67/{}'.format(path)).text
     return render_template("index.html")
 
 
@@ -97,7 +120,10 @@ def catch_all(path):
 # ## --        MEASURE      -- ## #
 # ## ------------------------- ## #
 def measure_temperature():
-    return 16 + 14*rdm.random()
+    return sensor.temperature
+
+def measure_humidity():
+    return sensor.relative_humidity
 
 
 # ## ------------------------- ## #
@@ -141,3 +167,4 @@ if __name__ == '__main__':
     }
 
     app.run()
+

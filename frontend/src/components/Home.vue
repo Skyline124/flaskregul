@@ -42,6 +42,17 @@
             v-on:click="toggleRegulation( 'manual' )">
                 Manual
             </button>
+            <button class="button is-large"
+            v-bind:class="{
+              'is-warning': (motorInit === ''),
+              'is-loading is-warning': (motorInit === 'wait'),
+              'is-danger':  (motorInit === 'fail'),
+              'is-success': (motorInit === 'success')
+            }"
+            id="init-btn"
+            v-on:click="initMotor()">
+                Init Motor
+            </button>
           </div>
 
           <div class="block">
@@ -65,7 +76,7 @@
           v-model="sliderValue"
           @drag-end="sliderDragEnd"
           style="margin-left: 20px; margin-right: 20px;"
-          :disabled="(regulation !== 'manual')"
+          :disabled="(regulation !== 'manual' || motorInit === 'wait')"
         ></vue-slider>
       </div>
     </div>
@@ -86,7 +97,8 @@ export default {
       waitingForValue: 'no',
       circleSliderValue: 0,
       sliderValue: 0,
-      temperature: 20
+      temperature: 20,
+      motorInit: ''
     }
   },
   methods: {
@@ -121,6 +133,36 @@ export default {
         console.log(error)
       })
     },
+    initMotor () {
+      this.motorInit = 'wait'
+      this.sliderValue = 0
+      this.waitingForValue = 'wait'
+      console.log('Initiating motor position')
+      const path = `http://192.168.1.67/api/initmotor`
+      axios.get(path)
+      .then(response => {
+        this.motorInit = 'success'
+        this.waitingForValue = 'no'
+      })
+      .catch(error => {
+        this.motorInit = 'fail'
+        console.log(error)
+        this.waitingForValue = 'no'
+      })
+    },
+    getRegulation () {
+      this.regulation = 'wait'
+      const path = `http://192.168.1.67/api/getregulation`
+      axios.get(path)
+      .then(response => {
+        this.regulation = response.data.regulation
+        console.log(response.data.regulation)
+      })
+      .catch(error => {
+        this.regulation = 'auto'
+        console.log(error)
+      })
+    },
     toggleRegulation (regul) {
       this.regulation = 'wait'
       const path = `http://192.168.1.67/api/setregulation`
@@ -151,8 +193,11 @@ export default {
       })
     }
   },
-  created () {
-    this.getRandom()
+  created: function () {
+    // `this` est une référence à l'instance de vm
+    console.log('INIT !!!')
+    this.getTemperature()
+    this.getRegulation()
   },
   components: {
     vueSlider

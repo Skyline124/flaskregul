@@ -6,14 +6,17 @@ import router from './router'
 
 import { faCoffee,
   faChevronCircleUp,
-  faChevronCircleDown } from '@fortawesome/free-solid-svg-icons'
+  faChevronCircleDown} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
 
 // Require the main Sass manifest file
 require('./assets/sass/main.scss')
 
-library.add(faCoffee, faChevronCircleUp, faChevronCircleDown)
+library.add(
+  faCoffee,
+  faChevronCircleUp,
+  faChevronCircleDown)
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 Vue.config.productionTip = false
