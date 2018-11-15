@@ -50,7 +50,8 @@
               'is-success': (motorInit === 'success')
             }"
             id="init-btn"
-            v-on:click="initMotor()">
+            v-on:click="initMotor()"
+            :disabled="waitingForValue === 'wait'">
                 Init Motor
             </button>
           </div>
@@ -135,7 +136,6 @@ export default {
     },
     initMotor () {
       this.motorInit = 'wait'
-      this.sliderValue = 0
       this.waitingForValue = 'wait'
       console.log('Initiating motor position')
       const path = `http://192.168.1.67/api/initmotor`
@@ -143,6 +143,7 @@ export default {
       .then(response => {
         this.motorInit = 'success'
         this.waitingForValue = 'no'
+        this.sliderValue = 0
       })
       .catch(error => {
         this.motorInit = 'fail'
