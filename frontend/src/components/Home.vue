@@ -77,7 +77,7 @@
           v-model="sliderValue"
           @drag-end="sliderDragEnd"
           style="margin-left: 20px; margin-right: 20px;"
-          :disabled="(regulation !== 'manual' || motorInit === 'wait')"
+          :disabled="(regulation !== 'manual' || motorInit === 'wait' || waitingForValue === 'wait')"
         ></vue-slider>
       </div>
     </div>
@@ -158,6 +158,9 @@ export default {
       .then(response => {
         this.regulation = response.data.regulation
         console.log(response.data.regulation)
+        if (this.regulation === 'manual') {
+          this.sliderValue = response.data.realized
+        }
       })
       .catch(error => {
         this.regulation = 'auto'

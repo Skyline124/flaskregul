@@ -47,7 +47,7 @@ def init_motor_request():
     print("Motor asked for init... ")
     isOK = motor.initPosition()
     status["motorStatus"] = isOK
-
+    status["percentageMotor"] = 0
     if isOK == "OK":
         return jsonify({'motorStatus': isOK})
     else:
@@ -87,7 +87,11 @@ def send_regulation():
     # retrieving regulation status from client
     regulation = status["regulation"]
     print("sending info on regulation type = " + regulation)
-    return jsonify({'regulation': regulation})
+    if regulation == 'manual':
+        return jsonify({'regulation': regulation,
+                        'realized': status["percentageMotor"]})
+    else:
+        return jsonify({'regulation': regulation})
 
 
 @app.route('/api/setregulation', methods=['POST'])
