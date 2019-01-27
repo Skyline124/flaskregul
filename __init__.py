@@ -1,7 +1,10 @@
 from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
+from Temp_DB import db, TimeAndTemp, RecordTemperature
 
-import time
+# import time
+import datetime
+import json
 import math
 import requests
 import random as rdm
@@ -32,6 +35,7 @@ app = Flask(__name__,
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
+# ##           RANDOM TEST         ## #
 @app.route('/api/random')
 def random_number():
     response = {
@@ -40,6 +44,7 @@ def random_number():
     return jsonify(response)
 
 
+# ##   INITITALIZATION OF MOTOR POSITION    ## #
 @app.route('/api/initmotor')
 def init_motor_request():
     global status
@@ -54,6 +59,7 @@ def init_motor_request():
         return jsonify({'motorStatus': isOK}), 500
 
 
+# ##           GET TEMPERATURE         ## #
 @app.route('/api/gettemperature', methods=['GET'])
 def send_temperature():
     # demand = float(request.get_data('demanded'))
@@ -61,6 +67,7 @@ def send_temperature():
     return jsonify({'temperature': measure_temperature()})
 
 
+# ##           GET HUMIDITY         ## #
 @app.route('/api/gethumidity', methods=['GET'])
 def send_humidity():
     # demand = float(request.get_data('demanded'))
@@ -68,6 +75,27 @@ def send_humidity():
     return jsonify({'humidity': measure_humidity()})
 
 
+# ##           GET TEMPERATURE HISTORY         ## #
+def date_handler(obj):
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    else:
+        return None
+
+
+@app.route('/api/gettemperaturehistory', methods=['GET'])
+def send_temperature_history():
+    # demand = float(request.get_data('demanded'))
+    Temp_History = get_measurement_history()
+    Dictionary = {'time': [], 'temperature': []}
+    for i in range(1, Temp_History.__len__()):
+        Dictionary['time'].append(Temp_History[i].time)
+        Dictionary['temperature'].append(Temp_History[i].temperature)
+
+    return jsonify(Dictionary)
+
+
+# ##           MANUAL COMMAND         ## #
 @app.route('/api/manualdemand', methods=['POST'])
 def receive_manual_demand():
     demanded = request.get_json()["demanded"]
@@ -80,6 +108,7 @@ def receive_manual_demand():
     return jsonify({'realized': math.floor(newPercentage)})
 
 
+# ##        GET REGULATION STATUS (AUTO/MANUAL)       ## #
 @app.route('/api/getregulation', methods=['GET'])
 def send_regulation():
     global status
@@ -94,6 +123,7 @@ def send_regulation():
         return jsonify({'regulation': regulation})
 
 
+# ##        SET REGULATION STATUS (AUTO/MANUAL)       ## #
 @app.route('/api/setregulation', methods=['POST'])
 def receive_regulation():
     global status
@@ -112,6 +142,7 @@ def receive_regulation():
         return jsonify({'realized': regulation})
 
 
+# ##        ROUTING       ## #
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
@@ -126,8 +157,13 @@ def catch_all(path):
 def measure_temperature():
     return sensor.temperature
 
+
 def measure_humidity():
     return sensor.relative_humidity
+
+
+def get_measurement_history():
+    return TimeAndTemp.query.all()
 
 
 # ## ------------------------- ## #
@@ -170,5 +206,8 @@ if __name__ == '__main__':
         'motorStatus': isOK
     }
 
-    app.run()
+    # Creation of database if not existing
+    db.create_all()  # only to be created once
+    RecordTemperature(temperature)
 
+    app.run()
