@@ -17,6 +17,7 @@
     "axios": "^0.16.2",
     "bulma": "^0.7.2",
     "bulma-extensions": "^4.0.1",
+    "bulma-start": "0.0.2",
     "vue": "^2.5.2",
     "vue-circle-slider": "^1.0.2",
     "vue-meta": "^1.5.8",
