@@ -1,10 +1,12 @@
-from flask import Flask
+# from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import datetime
 import pytz
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test1.db'
+# ############# put into __init__.py
+# app = Flask(__name__)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test1.db'
+# ############# 
 db = SQLAlchemy(app)
 
 tz = pytz.timezone('Europe/Paris')

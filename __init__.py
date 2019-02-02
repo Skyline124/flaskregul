@@ -1,10 +1,11 @@
 from flask import Flask, request, render_template, jsonify
 from flask_cors import CORS
-from Temp_DB import db, TimeAndTemp, RecordTemperature
+from flask_sqlalchemy import SQLAlchemy
 
+
+import pytz
 # import time
 import datetime
-import json
 import math
 import requests
 import random as rdm
@@ -16,6 +17,7 @@ import adafruit_sht31d
 i2c = busio.I2C(board.SCL, board.SDA)
 sensor = adafruit_sht31d.SHT31D(i2c)
 
+tz = pytz.timezone('Europe/Paris')
 
 status = {
     'temperature': sensor.temperature,
@@ -32,6 +34,9 @@ FLASK_DEBUG = 1
 app = Flask(__name__,
             static_folder="./dist/static",
             template_folder="./dist")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/www/flaskregul/test1.db'
+db = SQLAlchemy(app)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
@@ -63,8 +68,9 @@ def init_motor_request():
 @app.route('/api/gettemperature', methods=['GET'])
 def send_temperature():
     # demand = float(request.get_data('demanded'))
-
-    return jsonify({'temperature': measure_temperature()})
+    temp = measure_temperature()
+    RecordTemperature(temp)
+    return jsonify({'temperature': temp})
 
 
 # ##           GET HUMIDITY         ## #
@@ -85,6 +91,7 @@ def date_handler(obj):
 
 @app.route('/api/gettemperaturehistory', methods=['GET'])
 def send_temperature_history():
+    db.create_all()  # only to be created once
     # demand = float(request.get_data('demanded'))
     Temp_History = get_measurement_history()
     Dictionary = {'time': [], 'temperature': []}
@@ -187,6 +194,25 @@ def regulation(temperature, demand):
 
 
 # ## ------------------------- ## #
+# ## --  TEMPERATURE LOG    -- ## #
+# ## ------------------------- ## #
+class TimeAndTemp(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.DateTime(timezone=True), nullable=False, default=datetime.datetime.utcnow)
+    temperature = db.Column(db.Float, unique=False, nullable=False)
+
+    def __repr__(self):
+        tempstr = "%.1f" % self.temperature
+        return "\n<Time: " + tz.localize(self.time).__str__() + " // Temp. = " + tempstr + " °C>"
+
+
+def RecordTemperature(fTemp):
+    T0 = TimeAndTemp(time=db.func.now(), temperature=fTemp)
+    db.session.add(T0)
+    db.session.commit()
+
+
+# ## ------------------------- ## #
 # ## --        LAUNCH       -- ## #
 # ## ------------------------- ## #
 if __name__ == '__main__':
@@ -207,7 +233,10 @@ if __name__ == '__main__':
     }
 
     # Creation of database if not existing
-    db.create_all()  # only to be created once
-    RecordTemperature(temperature)
+    # db.create_all()  # only to be created once
+    # RecordTemperature(temperature)
 
     app.run()
+
+    db.create_all()  # only to be created once
+    RecordTemperature(temperature)
