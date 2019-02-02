@@ -2,7 +2,7 @@
   <div id="app">
     <div class="block has-text-centered">
       <div class="container">
-        <img style="width:150px;" src="./assets/logo.png">
+        <img style="width:150px;" src="./assets/favicon.png">
       </div>
     </div>
 
@@ -19,11 +19,14 @@
 export default {
   name: 'app',
   metaInfo: {
-    title: 'Dum Flaskregul', // set a title
+    title: 'Flaskregul', // set a title
     titleTemplate: '%s', // title is now "My Example App - Yay!"
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+    ],
+    link: [
+      { rel: 'favicon', href: './assets/favicon.png' }
     ],
     htmlAttrs: {
       lang: 'en',
