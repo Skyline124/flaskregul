@@ -3,8 +3,13 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 
 
+# Time zones
 import pytz
-# import time
+# time & atexit: scheduler of temperature recording
+import time
+import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
+
 import datetime
 import math
 import requests
@@ -69,7 +74,6 @@ def init_motor_request():
 def send_temperature():
     # demand = float(request.get_data('demanded'))
     temp = measure_temperature()
-    RecordTemperature(temp)
     return jsonify({'temperature': temp})
 
 
@@ -206,11 +210,18 @@ class TimeAndTemp(db.Model):
         return "\n<Time: " + tz.localize(self.time).__str__() + " // Temp. = " + tempstr + " °C>"
 
 
-def RecordTemperature(fTemp):
+def RecordTemperature():
+    fTemp = measure_temperature()
     T0 = TimeAndTemp(time=db.func.now(), temperature=fTemp)
     db.session.add(T0)
     db.session.commit()
 
+
+# scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=RecordTemperature, trigger="interval", seconds=30)
+scheduler.start()
+atexit.register(lambda: scheduler.shutdown())
 
 # ## ------------------------- ## #
 # ## --        LAUNCH       -- ## #
@@ -232,11 +243,14 @@ if __name__ == '__main__':
         'motorStatus': isOK
     }
 
-    # Creation of database if not existing
-    # db.create_all()  # only to be created once
-    # RecordTemperature(temperature)
-
+    # app launch
     app.run()
 
+    # Creation of database if not existing
     db.create_all()  # only to be created once
     RecordTemperature(temperature)
+
+    # scheduler
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=RecordTemperature, trigger="interval", seconds=30)
+    scheduler.start()
